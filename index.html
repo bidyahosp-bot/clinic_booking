@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>حجز مواعيد عيادة الجلدية</title>
+  <style>
+    body { font-family: Tahoma; text-align: center; direction: rtl; }
+    .slot { margin: 5px; padding: 10px; border: 1px solid #ccc; display: inline-block; cursor: pointer; }
+    .booked { background: #ddd; cursor: not-allowed; }
+    #form { margin-top: 20px; }
+    input { padding: 8px; width: 250px; margin: 5px; }
+    button { padding: 10px 20px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>حجز مواعيد عيادة الجلدية - الأربعاء 7/1/2026</h2>
+  <div id="slots"></div>
+
+  <div id="form" style="display:none;">
+    <h3>أدخل بياناتك</h3>
+    <form id="bookingForm">
+      <input type="text" id="name" placeholder="الاسم الثلاثي" required><br>
+      <input type="text" id="civil" placeholder="الرقم المدني" required><br>
+      <input type="text" id="phone" placeholder="رقم الهاتف" required><br>
+      <button type="submit">تأكيد الحجز</button>
+    </form>
+  </div>
+
+  <p id="message"></p>
+
+  <script>
+    // توليد 100 موعد (3 دقائق لكل موعد)
+    const slotsDiv = document.getElementById("slots");
+    let slots = [];
+    let startHour = 8, startMinute = 0;
+
+    for (let i = 0; i < 100; i++) {
+      let h = startHour.toString().padStart(2, '0');
+      let m = startMinute.toString().padStart(2, '0');
+      let time = `${h}:${m}`;
+      slots.push({time: time, booked: false});
+
+      startMinute += 3;
+      if (startMinute >= 60) { startMinute = 0; startHour++; }
+    }
+
+    function renderSlots() {
+      slotsDiv.innerHTML = "";
+      slots.forEach((slot, index) => {
+        let div = document.createElement("div");
+        div.className = "slot" + (slot.booked ? " booked" : "");
+        div.innerText = slot.time;
+        if (!slot.booked) {
+          div.onclick = () => bookSlot(index);
+        }
+        slotsDiv.appendChild(div);
+      });
+    }
+
+    function bookSlot(index) {
+      document.getElementById("form").style.display = "block";
+      document.getElementById("bookingForm").onsubmit = (e) => {
+        e.preventDefault();
+        slots[index].booked = true;
+        renderSlots();
+        document.getElementById("form").style.display = "none";
+
+        // إرسال البيانات إلى Google Sheets عبر Apps Script
+        fetch("https://script.google.com/macros/s/AKfycbzmXCK94DUvWjT0_fvQOhenI6JwrAKUuOGJDkYSspE5DjwnSDI1W10sPumP9q-FG33hZw/exec", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name: document.getElementById("name").value,
+            civil: document.getElementById("civil").value,
+            phone: document.getElementById("phone").value,
+            time: slots[index].time
+          })
+        })
+        .then(response => response.text())
+        .then(text => {
+          document.getElementById("message").innerText = text;
+        });
+
+      };
+    }
+
+    renderSlots();
+  </script>
+</body>
+</html>
