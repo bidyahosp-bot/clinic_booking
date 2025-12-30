@@ -113,7 +113,118 @@
 
   <!-- سكربت الحجز يبقى كما عدلناه سابقًا -->
   <script>
-    // نفس الكود السابق للحجز والتحقق من الرقم المدني والوقت
-  </script>
+   
+  // نفس الكود السابق للحجز والتحقق من الرقم المدني والوقت
+    
+  const slotsDiv = document.getElementById("slots");
+  let slots = [];
+  let startHour = 8, startMinute = 0;
+
+  // توليد 100 موعد (3 دقائق لكل موعد)
+  for (let i = 0; i < 100; i++) {
+    let h = startHour.toString().padStart(2, '0');
+    let m = startMinute.toString().padStart(2, '0');
+    let time = `${h}:${m}`;
+    slots.push({time: time, booked: false});
+
+    startMinute += 3;
+    if (startMinute >= 60) { startMinute = 0; startHour++; }
+  }
+
+  let bookedSlots = [];
+  let bookedCivilIds = [];
+
+  function renderSlots() {
+    slotsDiv.innerHTML = "";
+    slots.forEach((slot, index) => {
+      let div = document.createElement("div");
+      div.className = "slot" + (slot.booked ? " booked" : "");
+      div.innerText = slot.time;
+      if (!slot.booked) {
+        div.onclick = () => showForm(index);
+      }
+      slotsDiv.appendChild(div);
+    });
+  }
+
+  function showForm(index) {
+    document.getElementById("form").style.display = "block";
+    document.getElementById("bookingForm").onsubmit = (e) => {
+      e.preventDefault();
+      bookSlot(index);
+    };
+  }
+
+  function bookSlot(index) {
+    const civilId = document.getElementById("civil").value;
+
+    // تحقق من أن الرقم المدني لم يُستخدم سابقًا
+    if (bookedCivilIds.includes(civilId)) {
+      document.getElementById("message").innerText = "هذا الرقم المدني مسجل مسبقًا ❌";
+      return;
+    }
+
+    // تحقق من أن الموعد غير محجوز
+    if (slots[index].booked || bookedSlots.includes(slots[index].time)) {
+      document.getElementById("message").innerText = "هذا الموعد محجوز بالفعل ❌";
+      return;
+    }
+
+    document.getElementById("form").style.display = "none";
+    slots[index].booked = true;
+    renderSlots();
+
+    // إرسال البيانات إلى SheetDB
+    fetch("https://sheetdb.io/api/v1/zu5bpbfkeb9mz", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        data: {
+          name: document.getElementById("name").value,
+          civil: civilId,
+          phone: document.getElementById("phone").value,
+          time: slots[index].time
+        }
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      bookedCivilIds.push(civilId);
+      bookedSlots.push(slots[index].time);
+      document.getElementById("message").innerText =
+        `تم تسجيل الحجز بنجاح ✅\nالاسم: ${document.getElementById("name").value}\nالوقت: ${slots[index].time}`;
+    })
+    .catch(error => {
+      console.error("خطأ:", error);
+      document.getElementById("message").innerText = "حدث خطأ أثناء الحجز ❌";
+    });
+  }
+
+  // جلب الحجوزات من SheetDB عند تحميل الصفحة
+  function loadBookings() {
+    fetch("https://sheetdb.io/api/v1/zu5bpbfkeb9mz")
+      .then(response => response.json())
+      .then(data => {
+        data.forEach(row => {
+          bookedSlots.push(row.time);
+          bookedCivilIds.push(row.civil);
+          let slot = slots.find(s => s.time === row.time);
+          if (slot) slot.booked = true;
+        });
+        renderSlots();
+      })
+      .catch(error => {
+        console.error("خطأ في جلب الحجوزات:", error);
+        renderSlots();
+      });
+  }
+
+  // تحميل الحجوزات عند فتح الصفحة
+  loadBookings();
+</script>
+
 </body>
 </html>
+
