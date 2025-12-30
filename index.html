@@ -82,6 +82,16 @@
 })
 .then(response => response.json())
 .then(data => {
+  console.log(data); // لمراجعة الرد
+  document.getElementById("message").innerText = "تم تسجيل الحجز بنجاح ✅";
+})
+.catch(error => {
+  console.error(error);
+  document.getElementById("message").innerText = "حدث خطأ أثناء الحجز ❌";
+});
+})
+.then(response => response.json())
+.then(data => {
   document.getElementById("message").innerText = "تم تسجيل الحجز بنجاح ✅";
 })
 .catch(error => {
@@ -96,3 +106,4 @@
 </body>
 
 </html>
+
