@@ -66,22 +66,27 @@
         document.getElementById("form").style.display = "none";
 
         // إرسال البيانات إلى Google Sheets عبر Apps Script
-        fetch("https://script.google.com/macros/s/AKfycbzmXCK94DUvWjT0_fvQOhenI6JwrAKUuOGJDkYSspE5DjwnSDI1W10sPumP9q-FG33hZw/exec", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            name: document.getElementById("name").value,
-            civil: document.getElementById("civil").value,
-            phone: document.getElementById("phone").value,
-            time: slots[index].time
-          })
-        })
-        .then(response => response.text())
-        .then(text => {
-          document.getElementById("message").innerText = text;
-        });
+        fetch("https://sheetdb.io/api/v1/zu5bpbfkeb9mz", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    data: {
+      name: document.getElementById("name").value,
+      civil: document.getElementById("civil").value,
+      phone: document.getElementById("phone").value,
+      time: slots[index].time
+    }
+  })
+})
+.then(response => response.json())
+.then(data => {
+  document.getElementById("message").innerText = "تم تسجيل الحجز بنجاح ✅";
+})
+.catch(error => {
+  document.getElementById("message").innerText = "حدث خطأ أثناء الحجز ❌";
+});
 
       };
     }
@@ -89,4 +94,5 @@
     renderSlots();
   </script>
 </body>
+
 </html>
