@@ -119,13 +119,11 @@
     let slots = [];
     let startHour = 8, startMinute = 0;
 
-    // توليد 100 موعد (3 دقائق لكل موعد)
     for (let i = 0; i < 100; i++) {
       let h = startHour.toString().padStart(2, '0');
       let m = startMinute.toString().padStart(2, '0');
       let time = `${h}:${m}`;
       slots.push({time: time, booked: false});
-
       startMinute += 3;
       if (startMinute >= 60) { startMinute = 0; startHour++; }
     }
@@ -144,8 +142,13 @@
     }
 
     function showForm(index) {
+      if (slots[index].booked) {
+        document.getElementById("message").className = "error";
+        document.getElementById("message").innerText = "هذا الموعد محجوز بالفعل ❌";
+        return;
+      }
+
       document.getElementById("form").style.display = "block";
-      // عند الضغط على وقت، ينزل تلقائيًا إلى النموذج
       document.getElementById("form").scrollIntoView({ behavior: "smooth" });
 
       document.getElementById("bookingForm").onsubmit = (e) => {
@@ -158,7 +161,6 @@
       const civilId = document.getElementById("civil").value;
       const slotTime = slots[index].time;
 
-      // تحقق من الرقم المدني مباشرة من قاعدة البيانات
       fetch(`https://sheetdb.io/api/v1/zu5bpbfkeb9mz/search?civil=${civilId}`)
         .then(response => response.json())
         .then(data => {
@@ -168,7 +170,6 @@
             return;
           }
 
-          // تحقق من الوقت مباشرة من قاعدة البيانات
           fetch(`https://sheetdb.io/api/v1/zu5bpbfkeb9mz/search?time=${slotTime}`)
             .then(response => response.json())
             .then(data2 => {
@@ -178,7 +179,6 @@
                 return;
               }
 
-              // إذا لم يكن الرقم المدني ولا الوقت موجودين → سجل الحجز
               document.getElementById("form").style.display = "none";
               slots[index].booked = true;
               renderSlots();
@@ -199,8 +199,7 @@
               })
               .then(response => response.json())
               .then(data3 => {
-                // رسالة منبثقة للتأكيد
-                alert(`تم تسجيل الحجز بنجاح ✅\nالاسم: ${document.getElementById("name").value}\nالوقت: ${slotTime}`);
+                alert(`✅ تم تسجيل الحجز بنجاح\nالاسم: ${document.getElementById("name").value}\nالوقت: ${slotTime}`);
                 document.getElementById("message").className = "success";
                 document.getElementById("message").innerText =
                   `تم تسجيل الحجز بنجاح ✅\nالاسم: ${document.getElementById("name").value}\nالوقت: ${slotTime}`;
@@ -214,7 +213,6 @@
         });
     }
 
-    // جلب الحجوزات من SheetDB عند تحميل الصفحة
     function loadBookings() {
       fetch("https://sheetdb.io/api/v1/zu5bpbfkeb9mz")
         .then(response => response.json())
@@ -231,7 +229,6 @@
         });
     }
 
-    // تحميل الحجوزات عند فتح الصفحة
     loadBookings();
   </script>
 </body>
