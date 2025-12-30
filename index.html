@@ -44,7 +44,6 @@
       if (startMinute >= 60) { startMinute = 0; startHour++; }
     }
 
-    // عرض المواعيد
     function renderSlots() {
       slotsDiv.innerHTML = "";
       slots.forEach((slot, index) => {
@@ -58,7 +57,6 @@
       });
     }
 
-    // حجز موعد
     function bookSlot(index) {
       document.getElementById("form").style.display = "block";
       document.getElementById("bookingForm").onsubmit = (e) => {
@@ -69,50 +67,32 @@
 
         // إرسال البيانات إلى SheetDB
         fetch("https://sheetdb.io/api/v1/zu5bpbfkeb9mz", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    data: {
-      الاسم: document.getElementById("name").value,
-      الرقم_المدني: document.getElementById("civil").value,
-      الهاتف: document.getElementById("phone").value,
-      الوقت: slots[index].time
-    }
-  })
-})
-.then(response => response.json())
-.then(data => {
-  console.log("رد SheetDB:", data);
-  document.getElementById("message").innerText = "تم تسجيل الحجز بنجاح ✅";
-})
-.catch(error => {
-  console.error("خطأ:", error);
-  document.getElementById("message").innerText = "حدث خطأ أثناء الحجز ❌";
-});
-
-    // جلب الحجوزات من SheetDB عند تحميل الصفحة
-    function loadBookings() {
-      fetch("https://sheetdb.io/api/v1/zu5bpbfkeb9mz")
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            data: {
+              name: document.getElementById("name").value,
+              civil: document.getElementById("civil").value,
+              phone: document.getElementById("phone").value,
+              time: slots[index].time
+            }
+          })
+        })
         .then(response => response.json())
         .then(data => {
-          console.log("الحجوزات:", data);
-          data.forEach(row => {
-            let bookedSlot = slots.find(s => s.time === row.time);
-            if (bookedSlot) bookedSlot.booked = true;
-          });
-          renderSlots();
+          console.log("رد SheetDB:", data);
+          document.getElementById("message").innerText = "تم تسجيل الحجز بنجاح ✅";
         })
         .catch(error => {
-          console.error("خطأ في جلب الحجوزات:", error);
-          renderSlots();
+          console.error("خطأ:", error);
+          document.getElementById("message").innerText = "حدث خطأ أثناء الحجز ❌";
         });
+      };
     }
 
-    // تحميل الحجوزات عند فتح الصفحة
-    loadBookings();
+    renderSlots();
   </script>
 </body>
 </html>
-
