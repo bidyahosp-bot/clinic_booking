@@ -52,14 +52,6 @@
 
     function renderSlots() {
       slotsDiv.innerHTML = "";
-      let bookedCount = slots.filter(s => s.booked).length;
-
-      if (bookedCount >= 100) {
-        document.getElementById("message").className = "error";
-        document.getElementById("message").innerText = "عذرًا، جميع المواعيد ممتلئة ❌";
-        return;
-      }
-
       slots.forEach((slot, index) => {
         let div = document.createElement("div");
         div.className = "slot" + (slot.booked ? " booked" : "");
@@ -88,74 +80,33 @@
       const civilId = document.getElementById("civil").value;
       const slotTime = slots[index].time;
 
-      // تحقق من الرقم المدني
-      fetch(`https://sheetdb.io/api/v1/zu5bpbfkeb9mz/search?civil=${civilId}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.length > 0) {
-            document.getElementById("message").className = "error";
-            document.getElementById("message").innerText = "هذا الرقم المدني مسجل مسبقًا ❌";
-            return;
-          }
-
-          // تحقق من الوقت
-          fetch(`https://sheetdb.io/api/v1/zu5bpbfkeb9mz/search?time=${slotTime}`)
-            .then(response => response.json())
-            .then(data2 => {
-              if (data2.length > 0) {
-                document.getElementById("message").className = "error";
-                document.getElementById("message").innerText = "هذا الموعد محجوز بالفعل ❌";
-                return;
-              }
-
-              // إرسال البيانات إلى SheetDB
-              fetch("https://sheetdb.io/api/v1/zu5bpbfkeb9mz", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  data: {
-                    name: document.getElementById("name").value,
-                    civil: civilId,
-                    phone: document.getElementById("phone").value,
-                    time: slotTime
-                  }
-                })
-              })
-              .then(response => response.json())
-              .then(data3 => {
-                slots[index].booked = true; // ✅ اجعل الموعد محجوز فقط بعد نجاح التسجيل
-                renderSlots();
-                document.getElementById("form").style.display = "none";
-                document.getElementById("message").className = "success";
-                document.getElementById("message").innerText =
-                  `تم تسجيل الحجز بنجاح ✅\nالاسم: ${document.getElementById("name").value}\nالوقت: ${slotTime}\nالرجاء الحضور قبل الموعد بخمس دقائق.`;
-              })
-              .catch(error => {
-                console.error("خطأ:", error);
-                document.getElementById("message").className = "error";
-                document.getElementById("message").innerText = "حدث خطأ أثناء الحجز ❌";
-              });
-            });
-        });
-    }
-
-    function loadBookings() {
-      fetch("https://sheetdb.io/api/v1/zu5bpbfkeb9mz")
-        .then(response => response.json())
-        .then(data => {
-          data.forEach(row => {
-            let slot = slots.find(s => s.time === row.time);
-            if (slot) slot.booked = true;
-          });
-          renderSlots();
+      fetch("https://script.google.com/macros/s/AKfycbwu6qU8ueS2mhf3IGJaozwcrsVNv1lbgRobXURwqCq6zHK5IbMdK5BFU7ZD6DhOfLA2dw/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: document.getElementById("name").value,
+          civil: civilId,
+          phone: document.getElementById("phone").value,
+          time: slotTime
         })
-        .catch(error => {
-          console.error("خطأ في جلب الحجوزات:", error);
-          renderSlots();
-        });
+      })
+      .then(response => response.text())
+      .then(text => {
+        slots[index].booked = true; // ✅ اجعل الموعد محجوز فقط بعد نجاح التسجيل
+        renderSlots();
+        document.getElementById("form").style.display = "none";
+        document.getElementById("message").className = "success";
+        document.getElementById("message").innerText = text;
+      })
+      .catch(error => {
+        console.error("خطأ:", error);
+        document.getElementById("message").className = "error";
+        document.getElementById("message").innerText = "حدث خطأ أثناء الحجز ❌";
+      });
     }
 
-    loadBookings();
+    // مبدئيًا جميع المواعيد فارغة، يمكن لاحقًا إضافة تحميل من الجدول إذا أردت
+    renderSlots();
   </script>
 </body>
 </html>
