@@ -95,7 +95,7 @@ button:hover {
 <p id="message"></p>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxkLcFaxf2VEbITP2I-KMXbsNSdW7xLCV7Y8n4wmDBh-bU3Oss0KBBjReXBD-YryzFBTg/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXM6v1MM-sl8qxi-Pp6bITiiqTKDW5jSJh0aOsaeDcS_BbAI_xsZkMFWeo2IFu3lTTWA/exec";
 
 const slotsDiv = document.getElementById("slots");
 const counter = document.getElementById("counter");
@@ -182,17 +182,20 @@ function submitBooking() {
 }
 
 // تحميل الحجوزات السابقة
+// تحميل الحجوزات السابقة
 fetch(SCRIPT_URL)
   .then(r => r.json())
   .then(data => {
     data.forEach(b => {
       const s = slots.find(x => x.time === b.time);
-      if (s) s.booked = true;
+      if (s) s.booked = true;   // ← هنا يتم الإغلاق
     });
     renderSlots();
   })
   .catch(() => renderSlots());
+
 </script>
 
 </body>
 </html>
+
