@@ -1,176 +1,198 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <title>حجز مواعيد عيادة الجلدية - مستشفى بديه</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: Tahoma, Arial, sans-serif; text-align: center; direction: rtl; background: #f9f9f9; color: #333; }
-    header { background: #006699; color: white; padding: 15px; font-size: 20px; font-weight: bold; }
-    .slot { margin: 5px; padding: 12px; border: 1px solid #ccc; border-radius: 6px; display: inline-block; cursor: pointer; background: #fff; font-size: 16px; min-width: 70px; }
-    .booked { background: #ddd; color: #777; cursor: not-allowed; }
-    #form { margin: 20px auto; max-width: 320px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.1); }
-    input { padding: 10px; width: 100%; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
-    button { padding: 12px; width: 100%; background: #006699; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
-    button:hover { background: #004466; }
-    #message { margin-top: 15px; font-size: 16px; font-weight: bold; }
-    #message.success { color: green; }
-    #message.error { color: red; }
-    #counter { font-size:18px; font-weight:bold; color:#006699; margin: 15px 0; }
-  </style>
+<meta charset="UTF-8">
+<title>حجز مواعيد عيادة الجلدية - مستشفى بدية</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: Tahoma, Arial, sans-serif;
+  background: #f9f9f9;
+  text-align: center;
+  direction: rtl;
+  color: #333;
+}
+header {
+  background: #006699;
+  color: #fff;
+  padding: 15px;
+  font-size: 20px;
+  font-weight: bold;
+}
+.slot {
+  display: inline-block;
+  margin: 5px;
+  padding: 12px;
+  min-width: 75px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  font-size: 16px;
+}
+.slot.booked {
+  background: #ddd;
+  color: #777;
+  cursor: not-allowed;
+}
+#form {
+  display: none;
+  max-width: 320px;
+  margin: 20px auto;
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+input, button {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  font-size: 16px;
+}
+button {
+  background: #006699;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+button:hover {
+  background: #004466;
+}
+#message {
+  margin-top: 15px;
+  font-weight: bold;
+}
+#message.success { color: green; }
+#message.error { color: red; }
+#counter {
+  margin: 15px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #006699;
+}
+</style>
 </head>
+
 <body>
-  <header>مستشفى بديه</header>
-  <h2>حجز مواعيد عيادة الجلدية - الأربعاء 7/1/2026</h2>
-  
-  <!-- العداد الحي -->
-  <p id="counter"></p>
-  
-  <div id="slots"></div>
 
-  <div id="form" style="display:none;">
-    <h3>أدخل بياناتك</h3>
-    <form id="bookingForm">
-      <input type="text" id="name" placeholder="الاسم الثلاثي" required><br>
-      <input type="text" id="civil" placeholder="الرقم المدني" required><br>
-      <input type="text" id="phone" placeholder="رقم الهاتف" required><br>
-      <button type="submit">تأكيد الحجز</button>
-    </form>
-  </div>
+<header>مستشفى بدية</header>
+<h2>حجز مواعيد عيادة الجلدية<br>الأربعاء 7 / 1 / 2026</h2>
 
-  <p id="message"></p>
+<p id="counter"></p>
+<div id="slots"></div>
 
-  <script>
-    const slotsDiv = document.getElementById("slots");
-    let slots = [];
-    let startHour = 8, startMinute = 0;
+<div id="form">
+  <h3>أدخل بياناتك</h3>
+  <input type="text" id="name" placeholder="الاسم الثلاثي">
+  <input type="text" id="civil" placeholder="الرقم المدني">
+  <input type="text" id="phone" placeholder="رقم الهاتف">
+  <button onclick="submitBooking()">تأكيد الحجز</button>
+</div>
 
-    // توليد 100 موعد (3 دقائق لكل موعد)
-    for (let i = 0; i < 100; i++) {
-      let h = startHour.toString().padStart(2, '0');
-      let m = startMinute.toString().padStart(2, '0');
-      let time = `${h}:${m}`;
-      slots.push({time: time, booked: false});
-      startMinute += 3;
-      if (startMinute >= 60) { startMinute = 0; startHour++; }
-    }
+<p id="message"></p>
 
-    function renderSlots() {
-      slotsDiv.innerHTML = "";
-      let availableCount = 0;
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxkLcFaxf2VEbITP2I-KMXbsNSdW7xLCV7Y8n4wmDBh-bU3Oss0KBBjReXBD-YryzFBTg/exec";
 
-      slots.forEach((slot, index) => {
-        let div = document.createElement("div");
-        div.className = "slot" + (slot.booked ? " booked" : "");
-        div.innerText = slot.time;
-        if (!slot.booked) {
-          div.onclick = () => showForm(index);
-          availableCount++;
-        }
-        slotsDiv.appendChild(div);
-      });
+const slotsDiv = document.getElementById("slots");
+const counter = document.getElementById("counter");
+const message = document.getElementById("message");
+const form = document.getElementById("form");
 
-      // تحديث العداد
-      document.getElementById("counter").innerText = 
-        "المواعيد المتاحة للحجز: " + availableCount + " من أصل " + slots.length;
+let slots = [];
+let selectedIndex = null;
 
-      // إذا لا يوجد مواعيد متاحة
-      if (availableCount === 0) {
-        document.getElementById("message").className = "error";
-        document.getElementById("message").innerText = "تم إغلاق جميع المواعيد، لا توجد مواعيد متاحة للحجز ❌";
-      }
-    }
+// إنشاء المواعيد (100 موعد – كل 3 دقائق)
+let h = 8, m = 0;
+for (let i = 0; i < 100; i++) {
+  slots.push({ time: String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0"), booked:false });
+  m += 3;
+  if (m >= 60) { m = 0; h++; }
+}
 
-    function showForm(index) {
-      if (slots[index].booked) {
-        document.getElementById("message").className = "error";
-        document.getElementById("message").innerText = "هذا الموعد محجوز بالفعل ❌";
-        return;
-      }
-      document.getElementById("form").style.display = "block";
-      document.getElementById("bookingForm").onsubmit = (e) => {
-        e.preventDefault();
-        bookSlot(index);
+function renderSlots() {
+  slotsDiv.innerHTML = "";
+  let available = 0;
+
+  slots.forEach((s, i) => {
+    const d = document.createElement("div");
+    d.className = "slot" + (s.booked ? " booked" : "");
+    d.innerText = s.time;
+    if (!s.booked) {
+      d.onclick = () => {
+        selectedIndex = i;
+        form.style.display = "block";
       };
+      available++;
     }
+    slotsDiv.appendChild(d);
+  });
 
-    function bookSlot(index) {
-      const civilId = document.getElementById("civil").value;
-      const slotTime = slots[index].time;
-
-      fetch("https://script.google.com/macros/s/AKfycbx4cc0LA5ayWjZUBNkm43yQBi9uY0kWhXQJ5qUwTRvfugm4BTb-ppLF8EtDuONmvWWNKQ/exec", {
-        method: "POST",
-        const params = new URLSearchParams();
-params.append("name", name);
-params.append("civil", civil);
-params.append("phone", phone);
-params.append("time", slotTime);
-
-fetch("PUT_YOUR_SCRIPT_URL_HERE", {
-  method: "POST",
-  body: params
-})
-.then(response => response.text())
-.then(text => {
-  if (text.includes("❌")) {
+  counter.innerText = `المواعيد المتاحة: ${available} من ${slots.length}`;
+  if (available === 0) {
     message.className = "error";
-    message.innerText = text;
-  } else {
-    slots[index].booked = true;
-    renderSlots();
-    form.style.display = "none";
-    message.className = "success";
-    message.innerText = text;
+    message.innerText = "تم إغلاق جميع المواعيد ❌";
   }
-})
-.catch(err => {
-  message.className = "error";
-  message.innerText = "تعذر الاتصال بالخادم ❌";
-});
+}
 
-      })
-      .then(response => response.text())
-      .then(text => {
-        if (text.includes("❌")) {
-          document.getElementById("message").className = "error";
-          document.getElementById("message").innerText = text;
-        } else {
-          slots[index].booked = true;
-          renderSlots();
-          document.getElementById("form").style.display = "none";
-          document.getElementById("message").className = "success";
-          document.getElementById("message").innerText = text;
-        }
-      })
-      .catch(error => {
-        console.error("خطأ:", error);
-        document.getElementById("message").className = "error";
-        document.getElementById("message").innerText = "حدث خطأ أثناء الحجز ❌";
-      });
+function submitBooking() {
+  if (selectedIndex === null) return;
+
+  const name  = document.getElementById("name").value.trim();
+  const civil = document.getElementById("civil").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const time  = slots[selectedIndex].time;
+
+  if (!name || !civil || !phone) {
+    message.className = "error";
+    message.innerText = "❌ الرجاء تعبئة جميع الحقول";
+    return;
+  }
+
+  const params = new URLSearchParams();
+  params.append("name", name);
+  params.append("civil", civil);
+  params.append("phone", phone);
+  params.append("time", time);
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: params
+  })
+  .then(r => r.text())
+  .then(t => {
+    if (t.includes("❌")) {
+      message.className = "error";
+      message.innerText = t;
+    } else {
+      slots[selectedIndex].booked = true;
+      renderSlots();
+      form.style.display = "none";
+      message.className = "success";
+      message.innerText = t;
     }
+  })
+  .catch(() => {
+    message.className = "error";
+    message.innerText = "تعذر الاتصال بالخادم ❌";
+  });
+}
 
-    // تحميل المواعيد المحجوزة مسبقًا من الجدول
-    function loadBookings() {
-      fetch("https://script.google.com/macros/s/AKfycbx4cc0LA5ayWjZUBNkm43yQBi9uY0kWhXQJ5qUwTRvfugm4BTb-ppLF8EtDuONmvWWNKQ/exec")
-        .then(response => response.json())
-        .then(data => {
-          data.forEach(row => {
-            let slot = slots.find(s => s.time === row.time);
-            if (slot) slot.booked = true;
-          });
-          renderSlots();
-        })
-        .catch(error => {
-          console.error("خطأ في جلب الحجوزات:", error);
-          renderSlots();
-        });
-    }
+// تحميل الحجوزات السابقة
+fetch(SCRIPT_URL)
+  .then(r => r.json())
+  .then(data => {
+    data.forEach(b => {
+      const s = slots.find(x => x.time === b.time);
+      if (s) s.booked = true;
+    });
+    renderSlots();
+  })
+  .catch(() => renderSlots());
+</script>
 
-    loadBookings();
-  </script>
 </body>
 </html>
-
-
-
-
