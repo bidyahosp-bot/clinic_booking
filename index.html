@@ -96,7 +96,7 @@
           document.getElementById("message").className = "error";
           document.getElementById("message").innerText = text;
         } else {
-          slots[index].booked = true; // ✅ اجعل الموعد محجوز فقط بعد نجاح التسجيل
+          slots[index].booked = true;
           renderSlots();
           document.getElementById("form").style.display = "none";
           document.getElementById("message").className = "success";
@@ -110,7 +110,24 @@
       });
     }
 
-    renderSlots();
+    // تحميل المواعيد المحجوزة مسبقًا من الجدول
+    function loadBookings() {
+      fetch("https://script.google.com/macros/s/AKfycbwu6qU8ueS2mhf3IGJaozwcrsVNv1lbgRobXURwqCq6zHK5IbMdK5BFU7ZD6DhOfLA2dw/exec")
+        .then(response => response.json())
+        .then(data => {
+          data.forEach(row => {
+            let slot = slots.find(s => s.time === row.time);
+            if (slot) slot.booked = true;
+          });
+          renderSlots();
+        })
+        .catch(error => {
+          console.error("خطأ في جلب الحجوزات:", error);
+          renderSlots();
+        });
+    }
+
+    loadBookings();
   </script>
 </body>
 </html>
