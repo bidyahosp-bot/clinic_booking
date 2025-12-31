@@ -16,11 +16,16 @@
     #message { margin-top: 15px; font-size: 16px; font-weight: bold; }
     #message.success { color: green; }
     #message.error { color: red; }
+    #counter { font-size:18px; font-weight:bold; color:#006699; margin: 15px 0; }
   </style>
 </head>
 <body>
   <header>مستشفى بديه</header>
   <h2>حجز مواعيد عيادة الجلدية - الأربعاء 7/1/2026</h2>
+  
+  <!-- العداد الحي -->
+  <p id="counter"></p>
+  
   <div id="slots"></div>
 
   <div id="form" style="display:none;">
@@ -52,15 +57,22 @@
 
     function renderSlots() {
       slotsDiv.innerHTML = "";
+      let availableCount = 0;
+
       slots.forEach((slot, index) => {
         let div = document.createElement("div");
         div.className = "slot" + (slot.booked ? " booked" : "");
         div.innerText = slot.time;
         if (!slot.booked) {
           div.onclick = () => showForm(index);
+          availableCount++;
         }
         slotsDiv.appendChild(div);
       });
+
+      // تحديث العداد
+      document.getElementById("counter").innerText = 
+        "المواعيد المتاحة للحجز: " + availableCount + " من أصل " + slots.length;
     }
 
     function showForm(index) {
@@ -117,9 +129,9 @@
         .then(data => {
           data.forEach(row => {
             let slot = slots.find(s => s.time === row.time);
-            if (slot) slot.booked = true; // ✅ إغلاق الموعد المحجوز مسبقًا
+            if (slot) slot.booked = true;
           });
-          renderSlots(); // ✅ إعادة رسم الواجهة بعد التحديث
+          renderSlots();
         })
         .catch(error => {
           console.error("خطأ في جلب الحجوزات:", error);
