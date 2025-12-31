@@ -111,26 +111,23 @@
     }
 
     // تحميل المواعيد المحجوزة مسبقًا من الجدول
-function loadBookings() {
-  fetch("https://script.google.com/macros/s/AKfycbwu6qU8ueS2mhf3IGJaozwcrsVNv1lbgRobXURwqCq6zHK5IbMdK5BFU7ZD6DhOfLA2dw/exec")
-    .then(response => response.json())
-    .then(data => {
-      data.forEach(row => {
-        let slot = slots.find(s => s.time === row.time);
-        if (slot) slot.booked = true; // ✅ إغلاق الموعد المحجوز مسبقًا
-      });
-      renderSlots();
-    })
-    .catch(error => {
-      console.error("خطأ في جلب الحجوزات:", error);
-      renderSlots();
-    });
-}
-
-loadBookings();
+    function loadBookings() {
+      fetch("https://script.google.com/macros/s/AKfycbwu6qU8ueS2mhf3IGJaozwcrsVNv1lbgRobXURwqCq6zHK5IbMdK5BFU7ZD6DhOfLA2dw/exec")
+        .then(response => response.json())
+        .then(data => {
+          data.forEach(row => {
+            let slot = slots.find(s => s.time === row.time);
+            if (slot) slot.booked = true; // ✅ إغلاق الموعد المحجوز مسبقًا
+          });
+          renderSlots(); // ✅ إعادة رسم الواجهة بعد التحديث
+        })
+        .catch(error => {
+          console.error("خطأ في جلب الحجوزات:", error);
+          renderSlots();
+        });
+    }
 
     loadBookings();
   </script>
 </body>
 </html>
-
