@@ -98,7 +98,7 @@
       const civilId = document.getElementById("civil").value;
       const slotTime = slots[index].time;
 
-      fetch("https://script.google.com/macros/s/AKfycbyvs2cmM7BuyA6KTftvM3Ygl1kDFK8hRzp_XsfGkRc7qO7wGxI0YLvciXZFrO59ILL7mw/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbxErqq0ZaanNbqVcT0m_3jzn8_xy5AAiTjljAVvKm0K0Of1tV64EbEme9ori_M_Dp010g/exec", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -130,7 +130,7 @@
 
     // تحميل المواعيد المحجوزة مسبقًا من الجدول
     function loadBookings() {
-      fetch("https://script.google.com/macros/s/AKfycbyvs2cmM7BuyA6KTftvM3Ygl1kDFK8hRzp_XsfGkRc7qO7wGxI0YLvciXZFrO59ILL7mw/exec")
+      fetch("https://script.google.com/macros/s/AKfycbxErqq0ZaanNbqVcT0m_3jzn8_xy5AAiTjljAVvKm0K0Of1tV64EbEme9ori_M_Dp010g/exec")
         .then(response => response.json())
         .then(data => {
           data.forEach(row => {
@@ -149,5 +149,6 @@
   </script>
 </body>
 </html>
+
 
 
