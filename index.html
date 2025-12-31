@@ -73,6 +73,12 @@
       // تحديث العداد
       document.getElementById("counter").innerText = 
         "المواعيد المتاحة للحجز: " + availableCount + " من أصل " + slots.length;
+
+      // إذا لا يوجد مواعيد متاحة
+      if (availableCount === 0) {
+        document.getElementById("message").className = "error";
+        document.getElementById("message").innerText = "تم إغلاق جميع المواعيد، لا توجد مواعيد متاحة للحجز ❌";
+      }
     }
 
     function showForm(index) {
@@ -92,7 +98,7 @@
       const civilId = document.getElementById("civil").value;
       const slotTime = slots[index].time;
 
-      fetch("https://script.google.com/macros/s/AKfycbwu6qU8ueS2mhf3IGJaozwcrsVNv1lbgRobXURwqCq6zHK5IbMdK5BFU7ZD6DhOfLA2dw/exec", {
+      fetch("https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec", { // ضع رابط الـ Web App الجديد هنا
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,7 +130,7 @@
 
     // تحميل المواعيد المحجوزة مسبقًا من الجدول
     function loadBookings() {
-      fetch("https://script.google.com/macros/s/AKfycbwu6qU8ueS2mhf3IGJaozwcrsVNv1lbgRobXURwqCq6zHK5IbMdK5BFU7ZD6DhOfLA2dw/exec")
+      fetch("https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec") // ضع رابط الـ Web App الجديد هنا
         .then(response => response.json())
         .then(data => {
           data.forEach(row => {
