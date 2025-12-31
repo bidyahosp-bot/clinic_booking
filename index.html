@@ -98,15 +98,36 @@
       const civilId = document.getElementById("civil").value;
       const slotTime = slots[index].time;
 
-      fetch("https://script.google.com/macros/s/AKfycbxErqq0ZaanNbqVcT0m_3jzn8_xy5AAiTjljAVvKm0K0Of1tV64EbEme9ori_M_Dp010g/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbx4cc0LA5ayWjZUBNkm43yQBi9uY0kWhXQJ5qUwTRvfugm4BTb-ppLF8EtDuONmvWWNKQ/exec", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: document.getElementById("name").value,
-          civil: civilId,
-          phone: document.getElementById("phone").value,
-          time: slotTime
-        })
+        const params = new URLSearchParams();
+params.append("name", name);
+params.append("civil", civil);
+params.append("phone", phone);
+params.append("time", slotTime);
+
+fetch("PUT_YOUR_SCRIPT_URL_HERE", {
+  method: "POST",
+  body: params
+})
+.then(response => response.text())
+.then(text => {
+  if (text.includes("❌")) {
+    message.className = "error";
+    message.innerText = text;
+  } else {
+    slots[index].booked = true;
+    renderSlots();
+    form.style.display = "none";
+    message.className = "success";
+    message.innerText = text;
+  }
+})
+.catch(err => {
+  message.className = "error";
+  message.innerText = "تعذر الاتصال بالخادم ❌";
+});
+
       })
       .then(response => response.text())
       .then(text => {
@@ -130,7 +151,7 @@
 
     // تحميل المواعيد المحجوزة مسبقًا من الجدول
     function loadBookings() {
-      fetch("https://script.google.com/macros/s/AKfycbxErqq0ZaanNbqVcT0m_3jzn8_xy5AAiTjljAVvKm0K0Of1tV64EbEme9ori_M_Dp010g/exec")
+      fetch("https://script.google.com/macros/s/AKfycbx4cc0LA5ayWjZUBNkm43yQBi9uY0kWhXQJ5qUwTRvfugm4BTb-ppLF8EtDuONmvWWNKQ/exec")
         .then(response => response.json())
         .then(data => {
           data.forEach(row => {
@@ -149,6 +170,7 @@
   </script>
 </body>
 </html>
+
 
 
 
