@@ -92,11 +92,16 @@
       })
       .then(response => response.text())
       .then(text => {
-        slots[index].booked = true; // ✅ اجعل الموعد محجوز فقط بعد نجاح التسجيل
-        renderSlots();
-        document.getElementById("form").style.display = "none";
-        document.getElementById("message").className = "success";
-        document.getElementById("message").innerText = text;
+        if (text.includes("❌")) {
+          document.getElementById("message").className = "error";
+          document.getElementById("message").innerText = text;
+        } else {
+          slots[index].booked = true; // ✅ اجعل الموعد محجوز فقط بعد نجاح التسجيل
+          renderSlots();
+          document.getElementById("form").style.display = "none";
+          document.getElementById("message").className = "success";
+          document.getElementById("message").innerText = text;
+        }
       })
       .catch(error => {
         console.error("خطأ:", error);
@@ -105,7 +110,6 @@
       });
     }
 
-    // مبدئيًا جميع المواعيد فارغة، يمكن لاحقًا إضافة تحميل من الجدول إذا أردت
     renderSlots();
   </script>
 </body>
