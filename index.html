@@ -2,13 +2,15 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>NCD Screening Program – Bidiyah Hospital</title>
+<title>NCD Program – Bidiyah Hospital</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body{font-family:Tahoma;background:#f9f9f9;text-align:center;direction:rtl}
 header{background:#006699;color:#fff;padding:15px;font-weight:bold}
+#calendar{margin:20px auto}
 .slot{display:inline-block;margin:5px;padding:10px;border:1px solid #ccc;border-radius:6px;cursor:pointer}
 .slot.booked{background:#ddd;color:#777;cursor:not-allowed}
+#slots{display:none}
 #form{display:none;background:#fff;padding:15px;margin:15px auto;max-width:350px;border-radius:8px}
 button{background:#006699;color:white;border:none;padding:10px;border-radius:6px;cursor:pointer}
 button:hover{background:#004466}
@@ -16,108 +18,114 @@ button:hover{background:#004466}
 </head>
 <body>
 
-<header>NCD Program – Bidiyah Hospital</header>
+<header>NCD Screening Program – Bidiyah Hospital</header>
 
-<h3>اختر اليوم والتاريخ</h3>
+<h3>اختر التاريخ</h3>
 
-<button onclick="setDay('MON')">الاثنين</button>
-<button onclick="setDay('TUE')">الثلاثاء</button>
-
-<br><br>
-<select id="dateSelect"></select>
+<input type="date" id="dateInput">
 
 <div id="slots"></div>
 
 <div id="form">
+<h3>ادخل بياناتك</h3>
 <input id="name" placeholder="الاسم">
 <input id="civil" placeholder="الرقم المدني">
 <input id="phone" placeholder="الهاتف">
 <input id="age" placeholder="العمر">
-<button onclick="book()">تأكيد</button>
+<button onclick="book()">تأكيد الحجز</button>
 </div>
 
 <p id="msg"></p>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6_hiU-QLvMe4avDubaQa3R9bbHJZ6IwimFjXX3cem8ikWqoQ/exec";
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6_hiU-QLvMe4avDubaQa3R9bbHJZ6IwimFjXX3cem8ikWqoQ/exec";
 
 const SLOT_COUNT=30;
 const SLOT_MINUTES=10;
 const START_HOUR=8;
-let selectedDay="MON";
+
 let selectedDate=null;
+let selectedDay=null;
+let selectedTime=null;
 let bookings=[];
+
+const dateInput=document.getElementById("dateInput");
+const slotsDiv=document.getElementById("slots");
+const formDiv=document.getElementById("form");
+
+dateInput.addEventListener("change",()=>{
+  const d=new Date(dateInput.value);
+  const day=d.getDay();
+
+  if(day!==1 && day!==2){
+    alert("الحجز متاح فقط يومي الاثنين والثلاثاء");
+    dateInput.value="";
+    return;
+  }
+
+  selectedDate=dateInput.value;
+  selectedDay=(day===1)?"MON":"TUE";
+  renderSlots();
+});
 
 function pad(n){return String(n).padStart(2,"0");}
 
-function setDay(day){
-  selectedDay=day;
-  loadDates();
-}
-
-function loadDates(){
-  const sel=document.getElementById("dateSelect");
-  sel.innerHTML="";
-  const today=new Date();
-  for(let i=0;i<60;i++){
-    const d=new Date();
-    d.setDate(today.getDate()+i);
-    if((selectedDay==="MON"&&d.getDay()==1)||(selectedDay==="TUE"&&d.getDay()==2)){
-      const iso=d.toISOString().split("T")[0];
-      sel.innerHTML+=`<option value="${iso}">${iso}</option>`;
-    }
-  }
-  selectedDate=sel.value;
-  sel.onchange=()=>{selectedDate=sel.value;renderSlots();}
-  renderSlots();
-}
-
 function renderSlots(){
-  const div=document.getElementById("slots");
-  div.innerHTML="";
+  slotsDiv.style.display="block";
+  formDiv.style.display="none";
+  slotsDiv.innerHTML="<h3>اختر الوقت</h3>";
+
   for(let i=0;i<SLOT_COUNT;i++){
     let h=START_HOUR+Math.floor((i*SLOT_MINUTES)/60);
     let m=(i*SLOT_MINUTES)%60;
     let time=`${pad(h)}:${pad(m)}`;
-    let slotKey=`${selectedDate}|${selectedDay}|${time}`;
-    let booked=bookings.some(b=>b.Slot===slotKey);
-    div.innerHTML+=`<div class="slot ${booked?'booked':''}" onclick="selectSlot('${time}',${booked})">${time}</div>`;
+    let key=`${selectedDate}|${selectedDay}|${time}`;
+    let booked=bookings.some(b=>b.Slot===key);
+
+    slotsDiv.innerHTML+=
+    `<div class="slot ${booked?'booked':''}" 
+    onclick="selectTime('${time}',${booked})">${time}</div>`;
   }
 }
 
-let chosenTime=null;
-
-function selectSlot(time,booked){
- if(booked)return;
- chosenTime=time;
- document.getElementById("form").style.display="block";
+function selectTime(time,booked){
+  if(booked)return;
+  selectedTime=time;
+  formDiv.style.display="block";
 }
 
 function book(){
- const name=name.value.trim();
- const civil=civil.value.trim();
- const phone=phone.value.trim();
- const age=age.value.trim();
- if(!name||!civil||!phone||!age)return alert("اكمل البيانات");
+  const name=document.getElementById("name").value.trim();
+  const civil=document.getElementById("civil").value.trim();
+  const phone=document.getElementById("phone").value.trim();
+  const age=document.getElementById("age").value.trim();
 
- const params=new URLSearchParams();
- params.append("name",name);
- params.append("civil",civil);
- params.append("phone",phone);
- params.append("age",age);
- params.append("date",selectedDate);
- params.append("day",selectedDay);
- params.append("time",chosenTime);
- params.append("slot",`${selectedDate}|${selectedDay}|${chosenTime}`);
+  if(!name||!civil||!phone||!age){
+    alert("اكمل البيانات");
+    return;
+  }
 
- fetch(SCRIPT_URL,{method:"POST",body:params})
- .then(r=>r.text())
- .then(t=>{alert(t);location.reload();});
+  const params=new URLSearchParams();
+  params.append("name",name);
+  params.append("civil",civil);
+  params.append("phone",phone);
+  params.append("age",age);
+  params.append("date",selectedDate);
+  params.append("day",selectedDay);
+  params.append("time",selectedTime);
+  params.append("slot",`${selectedDate}|${selectedDay}|${selectedTime}`);
+
+  fetch(SCRIPT_URL,{method:"POST",body:params})
+  .then(r=>r.text())
+  .then(t=>{
+    alert(t);
+    location.reload();
+  });
 }
 
 fetch(SCRIPT_URL)
 .then(r=>r.json())
-.then(data=>{bookings=data;loadDates();});
+.then(data=>{bookings=data;});
 </script>
 
 </body>
