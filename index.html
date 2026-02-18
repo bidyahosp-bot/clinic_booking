@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>حجز مواعيد عيادة الجلدية - مستشفى بدية</title>
+<title>NCD برنامج الكشف عن الأمراض غير المعدية - مستشفى بدية | NCD Screening Program</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -38,7 +38,7 @@ header {
 }
 #form {
   display: none;
-  max-width: 320px;
+  max-width: 340px;
   margin: 20px auto;
   background: #fff;
   padding: 15px;
@@ -55,11 +55,21 @@ button {
   background: #006699;
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
 }
-button:hover {
-  background: #004466;
+button:hover { background: #004466; }
+
+.dayBtns{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  align-items:center;
+  margin: 12px 0;
+}
+.dayBtns button{
+  width: 170px;
+  margin: 0;
 }
 #message {
   margin-top: 15px;
@@ -73,69 +83,151 @@ button:hover {
   font-weight: bold;
   color: #006699;
 }
+.smallNote{
+  font-size: 14px;
+  color:#555;
+  margin-top:6px;
+}
 </style>
 </head>
 
 <body>
 
-<header>مستشفى بدية</header>
-<h2>حجز مواعيد عيادة الجلدية<br>الأربعاء 7 / 1 / 2026</h2>
+<header>مستشفى بدية | Bidiyah Hospital</header>
+
+<h2>
+حجز مواعيد NCD برنامج الكشف عن الأمراض غير المعدية<br>
+NCD – Non-Communicable Diseases Screening Program
+</h2>
+
+<div class="dayBtns">
+  <button id="btnMon" type="button">الاثنين | Monday</button>
+  <button id="btnTue" type="button">الثلاثاء | Tuesday</button>
+</div>
+<div class="smallNote">الحجز متاح فقط يومي الاثنين والثلاثاء • Booking available only on Monday & Tuesday</div>
 
 <p id="counter"></p>
 <div id="slots"></div>
 
 <div id="form">
-  <h3>أدخل بياناتك</h3>
-  <input type="text" id="name" placeholder="الاسم الثلاثي">
-  <input type="text" id="civil" placeholder="الرقم المدني">
-  <input type="text" id="phone" placeholder="رقم الهاتف">
-  <button onclick="submitBooking()">تأكيد الحجز</button>
+  <h3>أدخل بياناتك | Enter your details</h3>
+  <input type="text" id="name" placeholder="الاسم الثلاثي | Full Name">
+  <input type="text" id="civil" placeholder="الرقم المدني | Civil ID">
+  <input type="text" id="phone" placeholder="رقم الهاتف | Phone">
+  <input type="number" id="age" placeholder="العمر | Age">
+  <button onclick="submitBooking()">تأكيد الحجز | Confirm</button>
 </div>
 
 <p id="message"></p>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXM6v1MM-sl8qxi-Pp6bITiiqTKDW5jSJh0aOsaeDcS_BbAI_xsZkMFWeo2IFu3lTTWA/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzSG2wUEMmYpOAX2katBHhdtXNs6n2OnuEO0IDuzzCkmjBR6atCeof8Gk9lpHRpc8XOlA/exec";
+
 
 const slotsDiv = document.getElementById("slots");
-const counter = document.getElementById("counter");
-const message = document.getElementById("message");
-const form = document.getElementById("form");
+const counter  = document.getElementById("counter");
+const message  = document.getElementById("message");
+const form     = document.getElementById("form");
 
-let slots = [];
+const btnMon = document.getElementById("btnMon");
+const btnTue = document.getElementById("btnTue");
+
+const DAYS = {
+  MON: { ar: "الاثنين", en: "Monday",  key: "MON" },
+  TUE: { ar: "الثلاثاء", en: "Tuesday", key: "TUE" }
+};
+
+let selectedDayKey = "MON";     // default Monday
 let selectedIndex = null;
 
-// إنشاء المواعيد (100 موعد – كل 3 دقائق)
-let h = 8, m = 0;
-for (let i = 0; i < 100; i++) {
-  slots.push({ time: String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0"), booked:false });
-  m += 3;
-  if (m >= 60) { m = 0; h++; }
+let allBookings = [];           // from sheet
+let slots = [];                 // selected day slots
+
+function makeSlotsForDay() {
+  // 30 appointments – every 10 minutes (starts 08:00)
+  slots = [];
+  let h = 8, m = 0;
+  for (let i = 0; i < 30; i++) {
+    const time = String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0");
+    slots.push({ time, booked: false });
+    m += 10;
+    if (m >= 60) { m = 0; h++; }
+  }
+}
+
+function slotId(dayKey, time) {
+  return `${dayKey}|${time}`;
+}
+
+function applyBookingsToSlots() {
+  const dayKey = selectedDayKey;
+  slots.forEach(s => s.booked = false);
+
+  allBookings.forEach(b => {
+    const bSlot = (b.Slot || b.slot || "").toString().trim();
+    const bDay  = (b.Day  || b.day  || "").toString().trim().toUpperCase();
+    const bTime = (b.Time || b.time || "").toString().trim();
+
+    if (bSlot) {
+      // expected: "MON|08:00"
+      const parts = bSlot.split("|");
+      if (parts.length === 2 && parts[0] === dayKey) {
+        const s = slots.find(x => x.time === parts[1]);
+        if (s) s.booked = true;
+      }
+      return;
+    }
+
+    // fallback if returned separately
+    if (bDay && bTime && bDay === dayKey) {
+      const s = slots.find(x => x.time === bTime);
+      if (s) s.booked = true;
+    }
+  });
 }
 
 function renderSlots() {
   slotsDiv.innerHTML = "";
+  message.innerText = "";
+  message.className = "";
+  form.style.display = "none";
+  selectedIndex = null;
+
   let available = 0;
+  const d = DAYS[selectedDayKey];
 
   slots.forEach((s, i) => {
-    const d = document.createElement("div");
-    d.className = "slot" + (s.booked ? " booked" : "");
-    d.innerText = s.time;
+    const div = document.createElement("div");
+    div.className = "slot" + (s.booked ? " booked" : "");
+    div.innerText = s.time;
+
     if (!s.booked) {
-      d.onclick = () => {
+      div.onclick = () => {
         selectedIndex = i;
         form.style.display = "block";
       };
       available++;
     }
-    slotsDiv.appendChild(d);
+    slotsDiv.appendChild(div);
   });
 
-  counter.innerText = `المواعيد المتاحة: ${available} من ${slots.length}`;
+  counter.innerText = `المواعيد المتاحة (${d.ar}) : ${available} من ${slots.length}  |  Available (${d.en}): ${available}/${slots.length}`;
+
   if (available === 0) {
     message.className = "error";
-    message.innerText = "تم إغلاق جميع المواعيد ❌";
+    message.innerText = "تم إغلاق جميع المواعيد ❌ | All appointments are booked ❌";
   }
+}
+
+function setSelectedDay(dayKey) {
+  selectedDayKey = dayKey;
+
+  btnMon.style.opacity = (dayKey === "MON") ? "1" : "0.6";
+  btnTue.style.opacity = (dayKey === "TUE") ? "1" : "0.6";
+
+  makeSlotsForDay();
+  applyBookingsToSlots();
+  renderSlots();
 }
 
 function submitBooking() {
@@ -144,11 +236,15 @@ function submitBooking() {
   const name  = document.getElementById("name").value.trim();
   const civil = document.getElementById("civil").value.trim();
   const phone = document.getElementById("phone").value.trim();
-  const time  = slots[selectedIndex].time;
+  const age   = document.getElementById("age").value.trim();
 
-  if (!name || !civil || !phone) {
+  const time = slots[selectedIndex].time;
+  const day  = selectedDayKey;
+  const slot = slotId(day, time);
+
+  if (!name || !civil || !phone || !age) {
     message.className = "error";
-    message.innerText = "❌ الرجاء تعبئة جميع الحقول";
+    message.innerText = "❌ الرجاء تعبئة جميع الحقول | Please fill all fields";
     return;
   }
 
@@ -156,46 +252,47 @@ function submitBooking() {
   params.append("name", name);
   params.append("civil", civil);
   params.append("phone", phone);
-  params.append("time", time);
+  params.append("age", age);
+  params.append("day", day);       // MON/TUE
+  params.append("time", time);     // HH:mm
+  params.append("slot", slot);     // MON|HH:mm
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    body: params
-  })
-  .then(r => r.text())
-  .then(t => {
-    if (t.includes("❌")) {
+  fetch(SCRIPT_URL, { method: "POST", body: params })
+    .then(r => r.text())
+    .then(t => {
+      if (t.includes("❌")) {
+        message.className = "error";
+        message.innerText = t;
+      } else {
+        slots[selectedIndex].booked = true;
+        allBookings.push({ Day: day, Time: time, Slot: slot });
+        renderSlots();
+        form.style.display = "none";
+        message.className = "success";
+        message.innerText = t;
+      }
+    })
+    .catch(() => {
       message.className = "error";
-      message.innerText = t;
-    } else {
-      slots[selectedIndex].booked = true;
-      renderSlots();
-      form.style.display = "none";
-      message.className = "success";
-      message.innerText = t;
-    }
-  })
-  .catch(() => {
-    message.className = "error";
-    message.innerText = "تعذر الاتصال بالخادم ❌";
-  });
+      message.innerText = "تعذر الاتصال بالخادم ❌ | Server connection failed ❌";
+    });
 }
 
-// تحميل الحجوزات السابقة
-// تحميل الحجوزات السابقة
+// Load existing bookings
 fetch(SCRIPT_URL)
   .then(r => r.json())
   .then(data => {
-    data.forEach(b => {
-      const s = slots.find(x => x.time === b.time);
-      if (s) s.booked = true;   // ← هنا يتم الإغلاق
-    });
-    renderSlots();
+    allBookings = Array.isArray(data) ? data : [];
+    setSelectedDay("MON");
   })
-  .catch(() => renderSlots());
+  .catch(() => {
+    allBookings = [];
+    setSelectedDay("MON");
+  });
 
+btnMon.onclick = () => setSelectedDay("MON");
+btnTue.onclick = () => setSelectedDay("TUE");
 </script>
 
 </body>
 </html>
-
