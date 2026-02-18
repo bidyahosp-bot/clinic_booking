@@ -5,24 +5,60 @@
 <title>NCD Program – Bidiyah Hospital</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body{font-family:Tahoma;background:#f9f9f9;text-align:center;direction:rtl}
-header{background:#006699;color:#fff;padding:15px;font-weight:bold}
-#calendar{margin:20px auto}
-.slot{display:inline-block;margin:5px;padding:10px;border:1px solid #ccc;border-radius:6px;cursor:pointer}
+body{font-family:Tahoma;background:#f4f7fa;text-align:center;direction:rtl;margin:0}
+header{background:#006699;color:#fff;padding:15px;font-weight:bold;font-size:18px}
+
+.stats{
+display:flex;
+justify-content:center;
+gap:20px;
+margin:15px;
+flex-wrap:wrap;
+}
+.statBox{
+background:#fff;
+padding:10px 15px;
+border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+.calendar{max-width:900px;margin:20px auto;display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dayHeader{font-weight:bold;padding:6px;background:#e6eef5}
+.day{
+padding:10px;
+background:#fff;
+border-radius:6px;
+cursor:pointer;
+border:1px solid #ddd;
+font-size:14px;
+}
+.day.disabled{background:#eee;color:#aaa;cursor:not-allowed}
+.day.full{background:#d9534f;color:#fff;cursor:not-allowed}
+.day.active{background:#006699;color:#fff}
+
+#slots{display:none;margin-top:20px}
+.slot{display:inline-block;margin:5px;padding:8px 12px;border:1px solid #ccc;border-radius:6px;cursor:pointer}
 .slot.booked{background:#ddd;color:#777;cursor:not-allowed}
-#slots{display:none}
-#form{display:none;background:#fff;padding:15px;margin:15px auto;max-width:350px;border-radius:8px}
-button{background:#006699;color:white;border:none;padding:10px;border-radius:6px;cursor:pointer}
+
+#form{display:none;background:#fff;padding:15px;margin:20px auto;max-width:350px;border-radius:8px}
+input{width:100%;padding:8px;margin:6px 0}
+button{background:#006699;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer}
 button:hover{background:#004466}
+.small{font-size:12px;margin-top:4px}
 </style>
 </head>
 <body>
 
 <header>NCD Screening Program – Bidiyah Hospital</header>
 
-<h3>اختر التاريخ</h3>
+<div class="stats">
+  <div class="statBox">المحجوز اليوم: <span id="todayCount">0</span></div>
+  <div class="statBox">المحجوز هذا الأسبوع: <span id="weekCount">0</span></div>
+  <div class="statBox">إجمالي نافذة الشهرين: <span id="totalCount">0</span></div>
+</div>
 
-<input type="date" id="dateInput">
+<h3>اختر التاريخ</h3>
+<div class="calendar" id="calendar"></div>
 
 <div id="slots"></div>
 
@@ -35,97 +71,153 @@ button:hover{background:#004466}
 <button onclick="book()">تأكيد الحجز</button>
 </div>
 
-<p id="msg"></p>
-
 <script>
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6_hiU-QLvMe4avDubaQa3R9bbHJZ6IwimFjXX3cem8ikWqoQ/exec";
 
 const SLOT_COUNT=30;
 const SLOT_MINUTES=10;
 const START_HOUR=8;
+const WINDOW_MONTHS=2;
 
+let bookings=[];
 let selectedDate=null;
 let selectedDay=null;
 let selectedTime=null;
-let bookings=[];
 
-const dateInput=document.getElementById("dateInput");
-const slotsDiv=document.getElementById("slots");
-const formDiv=document.getElementById("form");
-
-dateInput.addEventListener("change",()=>{
-  const d=new Date(dateInput.value);
-  const day=d.getDay();
-
-  if(day!==1 && day!==2){
-    alert("الحجز متاح فقط يومي الاثنين والثلاثاء");
-    dateInput.value="";
-    return;
-  }
-
-  selectedDate=dateInput.value;
-  selectedDay=(day===1)?"MON":"TUE";
-  renderSlots();
-});
+const calendar=document.getElementById("calendar");
 
 function pad(n){return String(n).padStart(2,"0");}
+function addMonths(d,m){let x=new Date(d);x.setMonth(x.getMonth()+m);return x;}
+function toISO(d){return d.toISOString().split("T")[0];}
+function slotKey(date,day,time){return `${date}|${day}|${time}`;}
+
+function calculateStats(){
+ const todayISO=toISO(new Date());
+ let todayCount=0;
+ let weekCount=0;
+ let totalCount=bookings.length;
+
+ const today=new Date();
+
+ bookings.forEach(b=>{
+   if(b.Date===todayISO) todayCount++;
+
+   const d=new Date(b.Date);
+   const diff=Math.abs(today-d);
+   const days=Math.ceil(diff/(1000*60*60*24));
+   if(days<=7) weekCount++;
+ });
+
+ document.getElementById("todayCount").innerText=todayCount;
+ document.getElementById("weekCount").innerText=weekCount;
+ document.getElementById("totalCount").innerText=totalCount;
+}
+
+function getRemainingForDate(date){
+ let day=(new Date(date).getDay()==1)?"MON":"TUE";
+ let count=0;
+ for(let i=0;i<SLOT_COUNT;i++){
+   let h=START_HOUR+Math.floor((i*SLOT_MINUTES)/60);
+   let m=(i*SLOT_MINUTES)%60;
+   let time=`${pad(h)}:${pad(m)}`;
+   if(bookings.some(b=>b.Slot===slotKey(date,day,time)))
+     count++;
+ }
+ return SLOT_COUNT-count;
+}
+
+function generateCalendar(){
+ calendar.innerHTML="";
+ const today=new Date();
+ const end=addMonths(today,WINDOW_MONTHS);
+
+ const headers=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+ headers.forEach(h=>calendar.innerHTML+=`<div class="dayHeader">${h}</div>`);
+
+ for(let d=new Date(today); d<=end; d.setDate(d.getDate()+1)){
+   let day=d.getDay();
+   let iso=toISO(d);
+   let allowed=(day==1||day==2);
+   let remaining=allowed?getRemainingForDate(iso):0;
+
+   let cls="day";
+   if(!allowed) cls+=" disabled";
+   if(allowed && remaining==0) cls+=" full";
+
+   calendar.innerHTML+=
+   `<div class="${cls}" onclick="selectDate('${iso}',${day},${remaining})">
+   ${d.getDate()}
+   ${allowed?`<div class='small'>متبقي ${remaining}</div>`:''}
+   </div>`;
+ }
+}
+
+function selectDate(date,day,remaining){
+ if(remaining==0) return;
+ selectedDate=date;
+ selectedDay=(day==1)?"MON":"TUE";
+ renderSlots();
+}
 
 function renderSlots(){
-  slotsDiv.style.display="block";
-  formDiv.style.display="none";
-  slotsDiv.innerHTML="<h3>اختر الوقت</h3>";
+ const div=document.getElementById("slots");
+ div.style.display="block";
+ div.innerHTML="<h3>اختر الوقت</h3>";
 
-  for(let i=0;i<SLOT_COUNT;i++){
-    let h=START_HOUR+Math.floor((i*SLOT_MINUTES)/60);
-    let m=(i*SLOT_MINUTES)%60;
-    let time=`${pad(h)}:${pad(m)}`;
-    let key=`${selectedDate}|${selectedDay}|${time}`;
-    let booked=bookings.some(b=>b.Slot===key);
+ for(let i=0;i<SLOT_COUNT;i++){
+   let h=START_HOUR+Math.floor((i*SLOT_MINUTES)/60);
+   let m=(i*SLOT_MINUTES)%60;
+   let time=`${pad(h)}:${pad(m)}`;
+   let key=slotKey(selectedDate,selectedDay,time);
+   let booked=bookings.some(b=>b.Slot===key);
 
-    slotsDiv.innerHTML+=
-    `<div class="slot ${booked?'booked':''}" 
-    onclick="selectTime('${time}',${booked})">${time}</div>`;
-  }
+   div.innerHTML+=
+   `<div class="slot ${booked?'booked':''}" onclick="selectTime('${time}',${booked})">${time}</div>`;
+ }
 }
 
 function selectTime(time,booked){
-  if(booked)return;
-  selectedTime=time;
-  formDiv.style.display="block";
+ if(booked)return;
+ selectedTime=time;
+ document.getElementById("form").style.display="block";
 }
 
 function book(){
-  const name=document.getElementById("name").value.trim();
-  const civil=document.getElementById("civil").value.trim();
-  const phone=document.getElementById("phone").value.trim();
-  const age=document.getElementById("age").value.trim();
+ const name=name.value.trim();
+ const civil=civil.value.trim();
+ const phone=phone.value.trim();
+ const age=age.value.trim();
 
-  if(!name||!civil||!phone||!age){
-    alert("اكمل البيانات");
-    return;
-  }
+ if(!name||!civil||!phone||!age){
+   alert("اكمل البيانات");
+   return;
+ }
 
-  const params=new URLSearchParams();
-  params.append("name",name);
-  params.append("civil",civil);
-  params.append("phone",phone);
-  params.append("age",age);
-  params.append("date",selectedDate);
-  params.append("day",selectedDay);
-  params.append("time",selectedTime);
-  params.append("slot",`${selectedDate}|${selectedDay}|${selectedTime}`);
+ const params=new URLSearchParams();
+ params.append("name",name);
+ params.append("civil",civil);
+ params.append("phone",phone);
+ params.append("age",age);
+ params.append("date",selectedDate);
+ params.append("day",selectedDay);
+ params.append("time",selectedTime);
+ params.append("slot",slotKey(selectedDate,selectedDay,selectedTime));
 
-  fetch(SCRIPT_URL,{method:"POST",body:params})
-  .then(r=>r.text())
-  .then(t=>{
-    alert(t);
-    location.reload();
-  });
+ fetch(SCRIPT_URL,{method:"POST",body:params})
+ .then(r=>r.text())
+ .then(t=>{
+   alert(t);
+   location.reload();
+ });
 }
 
 fetch(SCRIPT_URL)
 .then(r=>r.json())
-.then(data=>{bookings=data;});
+.then(data=>{
+ bookings=data;
+ calculateStats();
+ generateCalendar();
+});
 </script>
 
 </body>
