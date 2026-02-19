@@ -107,7 +107,8 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6
   let selectedDayKey  = null; // MON/TUE
   let selectedTime    = null; // HH:mm
 
-  const headers = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+  const headers = ["السبت","الجمعة","الخميس","الأربعاء","الثلاثاء","الاثنين","الأحد"];
+
 
   function pad(n){ return String(n).padStart(2,"0"); }
   function toISO(d){ return d.toISOString().split("T")[0]; }
@@ -409,3 +410,4 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6
 </script>
 </body>
 </html>
+
