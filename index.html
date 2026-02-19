@@ -18,7 +18,7 @@
   .monthCard{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:12px}
   .monthTitle{font-weight:bold;margin:6px 0 10px 0;color:#0b3c55}
 
-  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;direction:ltr;transform:scaleX(-1)}
   .hdr{background:#e6eef5;border-radius:8px;padding:8px 4px;font-weight:bold;font-size:13px}
 
   .cell{
@@ -43,6 +43,10 @@
   button{background:#006699;color:#fff;border:none;padding:12px;border-radius:10px;cursor:pointer;width:100%;font-size:16px}
   button:hover{background:#004466}
   #msg{font-weight:bold;margin:10px 0}
+
+/* RTL visual without breaking JS day alignment */
+.hdr, .cell{transform:scaleX(-1);}
+
 </style>
 </head>
 <body>
@@ -107,7 +111,7 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6
   let selectedDayKey  = null; // MON/TUE
   let selectedTime    = null; // HH:mm
 
-  const headers = ["السبت","الجمعة","الخميس","الأربعاء","الثلاثاء","الاثنين","الأحد"];
+  const headers = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 
 
   function pad(n){ return String(n).padStart(2,"0"); }
@@ -246,38 +250,53 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6
       endWindow.setHours(23,59,59,999);
       const startWindow = new Date(); startWindow.setHours(0,0,0,0);
 
-      if(d < startWindow || d > endWindow) continue;
+      // داخل/خارج نافذة الحجز
+      const inWindow = (d >= startWindow && d <= endWindow);
 
       const cell=document.createElement("div");
       cell.className="cell";
 
+      // خارج نافذة الحجز: يظهر لكنه مقفل
+      if(!inWindow){
+        cell.classList.add("disabled");
+        cell.innerHTML = `<div>${d.getDate()}</div>`;
+        grid.appendChild(cell);
+        continue;
+      }
+
+      // داخل النافذة: يسمح فقط الاثنين والثلاثاء
       const allowed = (dow===1 || dow===2);
-      if(!allowed) cell.classList.add("disabled");
-
-      // احسب المتبقي فقط لو مسموح
-      let rem = 0;
-      let dayKey = null;
-      if(allowed){
-        dayKey = (dow===1) ? "MON" : "TUE";
-        rem = remainingForDate(iso, dayKey, set);
-        if(rem===0) cell.classList.add("full");
+      if(!allowed){
+        cell.classList.add("disabled");
+        cell.innerHTML = `<div>${d.getDate()}</div>`;
+        grid.appendChild(cell);
+        continue;
       }
 
-      cell.innerHTML = `<div>${d.getDate()}</div>` + (allowed ? `<div class="small">متبقي ${rem}</div>` : "");
+      // الاثنين/الثلاثاء: احسب المتبقي
+      const dayKey = (dow===1) ? "MON" : "TUE";
+      const rem = remainingForDate(iso, dayKey, set);
 
-      if(allowed && rem>0){
-        cell.addEventListener("click", ()=>{
-          // فعّل اختيار اليوم
-          document.querySelectorAll(".cell.active").forEach(x=>x.classList.remove("active"));
-          cell.classList.add("active");
-
-          selectedDateISO = iso;
-          selectedDayKey  = dayKey;
-          selectedTime    = null;
-
-          renderSlotsForSelected(set);
-        });
+      if(rem===0){
+        cell.classList.add("full");
+        cell.innerHTML = `<div>${d.getDate()}</div><div class="small">ممتلئ</div>`;
+        grid.appendChild(cell);
+        continue;
       }
+
+      cell.innerHTML = `<div>${d.getDate()}</div><div class="small">متبقي ${rem}</div>`;
+
+      cell.addEventListener("click", ()=>{
+        // فعّل اختيار اليوم
+        document.querySelectorAll(".cell.active").forEach(x=>x.classList.remove("active"));
+        cell.classList.add("active");
+
+        selectedDateISO = iso;
+        selectedDayKey  = dayKey;
+        selectedTime    = null;
+
+        renderSlotsForSelected(set);
+      });
 
       grid.appendChild(cell);
     }
@@ -410,4 +429,3 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6
 </script>
 </body>
 </html>
-
