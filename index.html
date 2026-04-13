@@ -59,7 +59,7 @@
     <div class="statBox">إجمالي نافذة الحجز: <span id="totalCount">0</span></div>
   </div>
 
-  <h3>اختر التاريخ (متاح فقط الاثنين والثلاثاء)</h3>
+  <h3>اختر التاريخ (متاح من الأحد إلى الخميس)</h3>
   <div class="note" id="windowNote"></div>
 
   <div class="months" id="months"></div>
@@ -82,7 +82,7 @@
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6_hiU-QLvMe4avDubaQa3R9bbHJZ6IwimFjXX3cem8ikWqoQ/exec";
 
   // إعدادات المواعيد
-  const SLOT_COUNT = 30;
+  const SLOT_COUNT = 15;
   const SLOT_MINUTES = 10;
   const START_HOUR = 8;
 
@@ -265,7 +265,7 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6
       }
 
       // داخل النافذة: يسمح فقط الاثنين والثلاثاء
-      const allowed = (dow===1 || dow===2);
+      const allowed = (dow>=0 && dow<=4);
       if(!allowed){
         cell.classList.add("disabled");
         cell.innerHTML = `<div>${d.getDate()}</div>`;
@@ -274,7 +274,8 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6
       }
 
       // الاثنين/الثلاثاء: احسب المتبقي
-      const dayKey = (dow===1) ? "MON" : "TUE";
+     const dayNames = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+const dayKey = dayNames[dow];
       const rem = remainingForDate(iso, dayKey, set);
 
       if(rem===0){
