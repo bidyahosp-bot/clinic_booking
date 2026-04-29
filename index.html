@@ -79,7 +79,7 @@
 
 <div class="wrap">
   <div class="stats">
-    <div class="statBox">المحجوز اليوم: <span id="todayCount">0</span></div>
+    <div class="statBox">المحجوز اليوم: <span id="nextDayCount">0</span></div>
     <div class="statBox">المحجوز هذا الأسبوع: <span id="weekCount">0</span></div>
     <div class="statBox">إجمالي نافذة الحجز: <span id="totalCount">0</span></div>
   </div>
@@ -181,20 +181,29 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxzcRgKTSJBMaKN4MB7EA6
     const today = new Date(); today.setHours(0,0,0,0);
     const todayISO = toISO(today);
 
-    let todayCount=0, weekCount=0;
+    let nextDayCount=0, weekCount=0;
     bookings.forEach(b=>{
       const d = new Date((b.Date || b.date || "").toString().trim());
       if(!isFinite(d)) return;
       d.setHours(0,0,0,0);
 
-      if((b.Date || b.date || "").toString().trim() === todayISO) todayCount++;
+     const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
+const tomorrowISO = toISO(tomorrow);
+
+// نحسب فقط إذا كان من الغد فما بعد
+if((b.Date || b.date || "").toString().trim() >= tomorrowISO){
+  if((b.Date || b.date || "").toString().trim() === tomorrowISO){
+    nextDayCount++;
+  }
+}
 
       // أسبوع (آخر 7 أيام)
       const diffDays = Math.floor((today - d) / (1000*60*60*24));
       if(diffDays >= 0 && diffDays <= 7) weekCount++;
     });
 
-    document.getElementById("todayCount").innerText = todayCount;
+    document.getElementById("nextDayCount").innerText = nextDayCount;
     document.getElementById("weekCount").innerText  = weekCount;
     document.getElementById("totalCount").innerText = bookings.length;
   }
@@ -282,7 +291,13 @@ if(dow !== 5 && dow !== 6){
       const startWindow = new Date(); startWindow.setHours(0,0,0,0);
 
       // داخل/خارج نافذة الحجز
-      const inWindow = (d >= startWindow && d <= endWindow);
+      // 🚫 منع اليوم الحالي (يبدأ من الغد)
+const tomorrow = new Date();
+tomorrow.setHours(0,0,0,0);
+tomorrow.setDate(tomorrow.getDate() + 1);
+
+// داخل نافذة الحجز (من الغد إلى نهاية النافذة)
+const inWindow = (d >= tomorrow && d <= endWindow);
 
       const cell=document.createElement("div");
       cell.className="cell";
