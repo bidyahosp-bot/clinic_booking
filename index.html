@@ -98,6 +98,7 @@
     <input id="inpPhone" placeholder="الهاتف" />
     <input id="inpAge" placeholder="العمر" type="number" />
     <button id="btnSave" type="button">تأكيد الحجز</button>
+   <div id="resultMsg" style="margin-top:10px;font-weight:bold;color:green;"></div>
     <div id="msg"></div>
   </div>
 </div>
@@ -432,13 +433,20 @@ const dayKey = dayNames[dow];
 
     fetch(SCRIPT_URL, { method:"POST", body: params })
       .then(r=>r.text())
-      .then(t=>{
-        if(t.includes("❌")){
-          msgDiv.style.color = "red";
-          msgDiv.textContent = t;
-        }else{
-          msgDiv.style.color = "green";
-          msgDiv.textContent = t;
+     .then(t=>{
+  if(t.includes("❌")){
+    msgDiv.style.color = "red";
+    msgDiv.innerHTML = "❌ " + t;
+  }else{
+    msgDiv.style.color = "green";
+
+    msgDiv.innerHTML = `
+      <div style="background:#d4edda;padding:12px;border-radius:10px;color:#155724">
+        ✅ <b>تم حجز موعدك بنجاح</b><br>
+        📅 التاريخ: ${selectedDateISO}<br>
+        ⏰ الوقت: ${selectedTime}
+      </div>
+    `;
 
           // حدّث بيانات الحجوزات محليًا + أعد رسم التقويم
           bookings.push({ Date:selectedDateISO, Day:selectedDayKey, Time:selectedTime, Slot:slotKey(selectedDateISO, selectedDayKey, selectedTime) });
@@ -449,6 +457,10 @@ const dayKey = dayNames[dow];
           renderCalendar();
 
           formDiv.style.display="none";
+        inpName.value = "";
+inpCivil.value = "";
+inpPhone.value = "";
+inpAge.value = "";
           slotsDiv.style.display="none";
         }
       })
