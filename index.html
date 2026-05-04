@@ -440,7 +440,7 @@ const dayKey = dayNames[dow];
   }else{
     msgDiv.style.color = "green";
 
-    msgDiv.innerHTML = `
+    document.getElementById("resultMsg").innerHTML = `
       <div style="background:#d4edda;padding:12px;border-radius:10px;color:#155724">
         ✅ <b>تم حجز موعدك بنجاح</b><br>
         📅 التاريخ: ${selectedDateISO}<br>
@@ -456,7 +456,11 @@ const dayKey = dayNames[dow];
           calcStats();
           renderCalendar();
 
-          formDiv.style.display="none";
+          // لا نخفي الفورم مباشرة حتى تظهر الرسالة
+setTimeout(()=>{
+
+  slotsDiv.style.display="none";
+}, 3000);
         inpName.value = "";
 inpCivil.value = "";
 inpPhone.value = "";
