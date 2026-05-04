@@ -433,7 +433,7 @@ const dayKey = dayNames[dow];
 
     fetch(SCRIPT_URL, { method:"POST", body: params })
       .then(r=>r.text())
-     .then(t=>{
+.then(t=>{
   if(t.includes("❌")){
     msgDiv.style.color = "red";
     msgDiv.innerHTML = "❌ " + t;
